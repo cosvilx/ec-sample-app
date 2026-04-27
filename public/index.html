@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>商品一覧 - ECサイト</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <span>🛒 ECサイト</span>
+    <nav>
+      <a href="/cart.html">カート<span id="cart-count">0</span></a>
+      <a href="#" id="logout-btn">ログアウト</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <h2 style="margin-bottom:24px;">商品一覧</h2>
+    <div class="product-grid" id="product-list"></div>
+  </div>
+
+  <script>
+    // ログインチェック
+    if (!localStorage.getItem('token')) location.href = '/login.html';
+
+    // 商品一覧取得
+    fetch('/api/products')
+      .then(res => res.json())
+      .then(products => {
+        const list = document.getElementById('product-list');
+        products.forEach(p => {
+          list.innerHTML += `
+            <div class="product-card">
+              <h3>${p.name}</h3>
+              <p class="price">¥${p.price.toLocaleString()}</p>
+              <p>在庫: ${p.stock}個</p>
+              <button class="btn add-to-cart" data-id="${p.id}">カートに追加</button>
+            </div>`;
+        });
+        // カートに追加ボタン
+        document.querySelectorAll('.add-to-cart').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const res = await fetch('/api/cart', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ productId: parseInt(btn.dataset.id), quantity: 1 })
+            });
+            const data = await res.json();
+            document.getElementById('cart-count').textContent = data.cart.length;
+            alert('カートに追加しました！');
+          });
+        });
+      });
+
+    // ログアウト
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      await fetch('/api/logout', { method: 'POST' });
+      localStorage.removeItem('token');
+      location.href = '/login.html';
+    });
+  </script>
+</body>
+</html>

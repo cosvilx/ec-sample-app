@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>カート - ECサイト</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <span>🛒 ECサイト</span>
+    <nav>
+      <a href="/index.html">商品一覧</a>
+      <a href="#" id="logout-btn">ログアウト</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <h2 style="margin-bottom:24px;">カート</h2>
+    <div id="cart-list"></div>
+    <div id="cart-empty" style="display:none;">カートは空です</div>
+    <button class="btn" id="order-btn" style="margin-top:24px;max-width:200px;">注文する</button>
+    <p id="success-msg">注文が完了しました！</p>
+    <p id="error-msg">エラーが発生しました</p>
+  </div>
+
+  <script>
+    if (!localStorage.getItem('token')) location.href = '/login.html';
+
+    // カート取得
+    fetch('/api/cart')
+      .then(res => res.json())
+      .then(cart => {
+        const list = document.getElementById('cart-list');
+        if (cart.length === 0) {
+          document.getElementById('cart-empty').style.display = 'block';
+          document.getElementById('order-btn').style.display = 'none';
+        }
+        cart.forEach(item => {
+          list.innerHTML += `
+            <div class="cart-item">
+              <span>${item.name}</span>
+              <span>¥${item.price.toLocaleString()} × ${item.quantity}</span>
+            </div>`;
+        });
+      });
+
+    // 注文
+    document.getElementById('order-btn').addEventListener('click', async () => {
+      const res = await fetch('/api/orders', { method: 'POST' });
+      const data = await res.json();
+      if (data.order) {
+        document.getElementById('success-msg').style.display = 'block';
+        document.getElementById('order-btn').style.display = 'none';
+      } else {
+        document.getElementById('error-msg').style.display = 'block';
+      }
+    });
+
+    // ログアウト
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      await fetch('/api/logout', { method: 'POST' });
+      localStorage.removeItem('token');
+      location.href = '/login.html';
+    });
+  </script>
+</body>
+</html>
