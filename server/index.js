@@ -21,6 +21,27 @@ app.get('/api/products', (req, res) => {
   res.json(products);
 });
 
+// 商品検索API
+app.get('/api/products/search', (req, res) => {
+  const { keyword, minPrice, maxPrice } = req.query;
+  let result = [...products];
+
+  if (keyword) {
+    result = result.filter(p => p.name.includes(keyword));
+  }
+  if (minPrice) {
+    result = result.filter(p => p.price >= parseInt(minPrice));
+  }
+  if (maxPrice) {
+    result = result.filter(p => p.price <= parseInt(maxPrice));
+  }
+
+  if (result.length === 0) {
+    return res.status(404).json({ error: '商品が見つかりません' });
+  }
+  res.json(result);
+});
+
 // 商品詳細
 app.get('/api/products/:id', (req, res) => {
   const product = products.find(p => p.id === parseInt(req.params.id));
@@ -71,6 +92,41 @@ app.post('/api/logout', (req, res) => {
 app.delete('/api/cart', (req, res) => {
   cart = [];
   res.json({ message: 'カートをリセットしました' });
+});
+
+// 在庫管理API
+app.get('/api/products/:id/stock', (req, res) => {
+  const product = products.find(p => p.id === parseInt(req.params.id));
+  if (!product) return res.status(404).json({ error: '商品が見つかりません' });
+  res.json({ id: product.id, name: product.name, stock: product.stock });
+});
+
+app.patch('/api/products/:id/stock', (req, res) => {
+  const product = products.find(p => p.id === parseInt(req.params.id));
+  if (!product) return res.status(404).json({ error: '商品が見つかりません' });
+  const { quantity } = req.body;
+  product.stock += quantity;
+  if (product.stock < 0) {
+    product.stock = 0;
+    return res.status(400).json({ error: '在庫が不足しています', stock: 0 });
+  }
+  res.json({ message: '在庫を更新しました', stock: product.stock });
+});
+
+// クーポンAPI
+const coupons = [
+  { code: 'SAVE10', discount: 10 },
+  { code: 'SAVE20', discount: 20 },
+  { code: 'INVALID', discount: 0 },
+];
+
+app.post('/api/coupon', (req, res) => {
+  const { code } = req.body;
+  const coupon = coupons.find(c => c.code === code);
+  if (!coupon || coupon.discount === 0) {
+    return res.status(400).json({ error: '無効なクーポンコードです' });
+  }
+  res.json({ message: 'クーポンを適用しました', discount: coupon.discount });
 });
 
 app.listen(3000, () => console.log('サーバー起動: http://localhost:3000'));
