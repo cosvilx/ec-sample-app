@@ -48,7 +48,7 @@ jobs:
       - name: JMeter 負荷テスト実行
         run: |
           mkdir -p jmeter-report
-          jmeter/bin/jmeter.sh -n -t ec-load-test.jmx -l result.jtl -e -o jmeter-report/
+          jmeter/bin/jmeter.sh -n -t jmeter/ec-load-test.jmx -l jmeter/result.jtl -e -o jmeter-report/
 
       - name: JMeterレポートを保存
         uses: actions/upload-artifact@v4
