@@ -17,7 +17,15 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
+      - name: JMeterキャッシュ
+        id: cache-jmeter
+        uses: actions/cache@v4
+        with:
+          path: jmeter
+          key: jmeter-5.6.3
+
       - name: JMeter インストール
+        if: steps.cache-jmeter.outputs.cache-hit != 'true'
         run: |
           wget https://downloads.apache.org/jmeter/binaries/apache-jmeter-5.6.3.tgz
           tar -xf apache-jmeter-5.6.3.tgz
@@ -39,4 +47,13 @@ jobs:
 
       - name: JMeter 負荷テスト実行
         run: |
-          mkdir -p jmeter-repo
+          mkdir -p jmeter-report
+          jmeter/bin/jmeter.sh -n -t ec-load-test.jmx -l result.jtl -e -o jmeter-report/
+
+      - name: JMeterレポートを保存
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jmeter-report
+          path: jmeter-report/
+          retention-days: 30
